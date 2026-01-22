@@ -57,7 +57,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "frontend",
+    "frontend.apps.FrontendConfig",
     "accounts.apps.AccountsConfig",
     "catalog.apps.CatalogConfig",
     "django_dump_load_utf8",
