@@ -1,0 +1,44 @@
+services:
+  web:
+    build: .
+    volumes:
+      - ./onlinestore:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/uploads
+    expose:
+      - "8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=onlinestore.settings
+    depends_on: []
+    restart: unless-stopped
+    env_file:
+      - .env
+    command:
+      - /bin/sh
+      - -c
+      - |
+        python manage.py migrate &&
+        python manage.py loaddatautf8 onlinestore-fixture.json ||
+        echo "Не удалось загрузить фикстуру" &&
+        gunicorn onlinestore.wsgi:application --bind 0.0.0.0:8000
+    logging:
+      driver: "json-file"
+      options:
+        max-file: 10
+        max-size: "200k"
+
+  nginx:
+    build:
+      context: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/uploads
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  static_volume:
+  media_volume:
