@@ -44,27 +44,37 @@ def clear_uploads_category(inst, obj, path):
     """
     Очистка папок каталогов и подкаталогов от неиспользуемых картинок
     """
-    result = obj.objects.filter(id=inst.pk)
-    # удаление старого файла при замене картинки
-    if result:
-        image_path = result.first().image.path
+    try:
         os.chdir(os.path.join(curr_dir, path))
-        image_name = image_path.split("/")[-1]
-        if os.path.exists(image_name):
-            os.remove(image_name)
 
-    # удаление файлов, которым нет соответствия в базе данных
-    parent_id = result.first().parent_id
-    categories = obj.objects.filter(
-        **({"parent_id": parent_id} if parent_id else {}),
-        **({"parent__isnull": True} if not parent_id else {}),
-    ).all()
-    names = [str(category.image).split("/")[-1] for category in categories]
-    for file in os.listdir():
-        if file not in names:
-            os.remove(file)
+        result = obj.objects.filter(id=inst.pk)
+        # удаление старого файла при замене картинки
+        if result:
+            try:
+                image_path = result.first().image.path
+                image_name = image_path.split("/")[-1]
+                if os.path.exists(image_name):
+                    os.remove(image_name)
+            except ValueError as ex:
+                print(ex)
 
-    os.chdir(curr_dir)
+
+        # удаление файлов, которым нет соответствия в базе данных
+        result_one = result.first()
+        if result_one:
+            parent_id = result_one.parent_id
+            categories = obj.objects.filter(
+                **({"parent_id": parent_id} if parent_id else {}),
+                **({"parent__isnull": True} if not parent_id else {}),
+            ).all()
+            names = [str(category.image).split("/")[-1] for category in categories]
+            for file in os.listdir():
+                if file not in names:
+                    os.remove(file)
+
+        os.chdir(curr_dir)
+    except FileNotFoundError as ex:
+        print(ex)
 
 
 def prod_images_dir_path(inst: "Image", filename: str) -> str:
@@ -75,6 +85,7 @@ def prod_images_dir_path(inst: "Image", filename: str) -> str:
 
 def category_image_path(inst, filename):
     path = f"category/{inst.parent.pk}" if inst.parent else "category/0"
+    print(path)
     clear_uploads_category(inst=inst, obj=Category, path=f"uploads/{path}")
     return f"{path}/{filename}"
 
